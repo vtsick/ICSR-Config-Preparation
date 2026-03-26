@@ -26,22 +26,22 @@ The script currently:
 Place these files in the same directory:
 
 - `modify_config.py`
-- `nn-b2b-sae-3-1.cfg`
-- `nn-b2b-sae-4-1.cfg`
+- your source config
+- your target config
 
 Run:
 
 ```bash
-python3 modify_config.py
+python3 modify_config.py <source.cfg> <target.cfg> <output.cfg>
 ```
 
-The result will be written to:
+Example:
 
-```text
-nn-b2b-sae-4-1-new.cfg
+```bash
+python3 modify_config.py nn-b2b-sae-3-1.cfg nn-b2b-sae-4-1.cfg nn-b2b-sae-4-1-new.cfg
 ```
 
 ## Notes
 
 - Configuration files are intentionally excluded from git tracking.
-- The script uses fixed filenames and currently does not accept CLI arguments.
+- The script requires three positional arguments: source config, target config, and output config.

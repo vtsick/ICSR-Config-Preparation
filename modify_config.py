@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import re
 from pathlib import Path
 
@@ -174,13 +175,35 @@ def modify_config(file3_path, file4_path):
 
 
 def main():
-    file3_path = Path("nn-b2b-sae-3-1.cfg")
-    file4_path = Path("nn-b2b-sae-4-1.cfg")
-    output_path = Path("nn-b2b-sae-4-1-new.cfg")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Copy matching loopback-related settings from a source StarOS "
+            "configuration into a target configuration."
+        )
+    )
+    parser.add_argument(
+        "source_config",
+        type=Path,
+        help="input config used as the source of loopback-related values",
+    )
+    parser.add_argument(
+        "target_config",
+        type=Path,
+        help="config to modify based on the source config",
+    )
+    parser.add_argument(
+        "output_config",
+        type=Path,
+        help="output filename for the resulting configuration",
+    )
+    args = parser.parse_args()
 
-    modified_content, replacements, replaced_endpoints, replaced_line_counts = modify_config(file3_path, file4_path)
+    modified_content, replacements, replaced_endpoints, replaced_line_counts = modify_config(
+        args.source_config,
+        args.target_config,
+    )
 
-    with open(output_path, "w", encoding="utf-8") as outfile:
+    with open(args.output_config, "w", encoding="utf-8") as outfile:
         outfile.write(modified_content)
 
     print(f"Updated {len(replacements)} loopback IP mappings.")
@@ -191,7 +214,7 @@ def main():
         print(f"diameter endpoint {endpoint_name}")
     for label, count in replaced_line_counts.items():
         print(f"Copied {count} line(s) for {label}.")
-    print(f"Modified configuration saved to {output_path}")
+    print(f"Modified configuration saved to {args.output_config}")
 
 
 if __name__ == "__main__":
