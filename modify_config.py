@@ -3,10 +3,11 @@
 import argparse
 import logging
 import re
+import sys
 from pathlib import Path
 
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 LOOPBACK_HEADER_RE = re.compile(r"^\s*interface\s+(\S+)\s+loopback\s*$")
@@ -300,7 +301,7 @@ def replace_diameter_endpoint_blocks(text, source_blocks, target_blocks, source_
         if target_block == source_block:
             continue
 
-        if not any(ip in source_block or ip in target_block for ip in loopback_ips):
+        if not any(re.search(rf"(?<![\d.]){re.escape(ip)}(?![\d.])", source_block) or re.search(rf"(?<![\d.]){re.escape(ip)}(?![\d.])", target_block) for ip in loopback_ips):
             continue
 
         text = text.replace(target_block, source_block, 1)
@@ -318,35 +319,35 @@ def modify_config(ref_config_path, base_config_path):
     and any other direct IP references.
     """
     with open(base_config_path, "r", encoding="utf-8") as infile:
-        original_target_content = infile.read()
+        original_base_content = infile.read()
 
     with open(ref_config_path, "r", encoding="utf-8") as infile:
-        source_content = infile.read()
+        ref_content = infile.read()
 
     skipped_context_names = (
-        find_service_redundancy_context_names(source_content)
-        | find_service_redundancy_context_names(original_target_content)
+        find_service_redundancy_context_names(ref_content)
+        | find_service_redundancy_context_names(original_base_content)
     )
-    filtered_source_content = remove_contexts_by_name(source_content, skipped_context_names)
-    filtered_target_content = remove_contexts_by_name(original_target_content, skipped_context_names)
+    filtered_ref_content = remove_contexts_by_name(ref_content, skipped_context_names)
+    filtered_base_content = remove_contexts_by_name(original_base_content, skipped_context_names)
 
-    source_loopbacks = extract_loopback_ips_from_text(filtered_source_content)
-    target_loopbacks = extract_loopback_ips_from_text(filtered_target_content)
-    source_endpoints = extract_diameter_endpoint_blocks_from_text(filtered_source_content)
-    target_endpoints = extract_diameter_endpoint_blocks_from_text(filtered_target_content)
-    loopback_discrepancies = collect_loopback_discrepancies(source_loopbacks, target_loopbacks)
+    ref_loopbacks = extract_loopback_ips_from_text(filtered_ref_content)
+    base_loopbacks = extract_loopback_ips_from_text(filtered_base_content)
+    ref_endpoints = extract_diameter_endpoint_blocks_from_text(filtered_ref_content)
+    base_endpoints = extract_diameter_endpoint_blocks_from_text(filtered_base_content)
+    loopback_discrepancies = collect_loopback_discrepancies(ref_loopbacks, base_loopbacks)
 
     replacements = {}
-    for interface_name, source_ip in source_loopbacks.items():
-        target_ip = target_loopbacks.get(interface_name)
-        if target_ip and target_ip != source_ip:
-            replacements[target_ip] = source_ip
+    for interface_name, ref_ip in ref_loopbacks.items():
+        base_ip = base_loopbacks.get(interface_name)
+        if base_ip and base_ip != ref_ip:
+            replacements[base_ip] = ref_ip
 
-    modified_content = original_target_content
+    modified_content = original_base_content
 
     discrepancies = collect_discrepancies(
-        filtered_source_content,
-        filtered_target_content,
+        filtered_ref_content,
+        filtered_base_content,
         [
             ("diameter endpoint", DIAMETER_ENDPOINT_HEADER_RE),
             ("apn", APN_BLOCK_RE),
@@ -358,28 +359,31 @@ def modify_config(ref_config_path, base_config_path):
 
     modified_content, replaced_endpoints = replace_diameter_endpoint_blocks(
         modified_content,
-        source_endpoints,
-        target_endpoints,
-        source_loopbacks,
-        target_loopbacks,
+        ref_endpoints,
+        base_endpoints,
+        ref_loopbacks,
+        base_loopbacks,
     )
 
-    for old_ip, new_ip in replacements.items():
+    # Sort by IP length descending to prevent replacement conflicts
+    # e.g., replace 10.0.0.1 before 10.0.0.10 to avoid partial matches
+    sorted_replacements = sorted(replacements.items(), key=lambda x: (-len(x[0]), x[0]))
+    for old_ip, new_ip in sorted_replacements:
         modified_content = replace_exact_ip(modified_content, old_ip, new_ip)
 
     service_context_names = [
         name
-        for name in find_context_names_with_pattern(filtered_source_content, APN_BLOCK_RE)
+        for name in find_context_names_with_pattern(filtered_ref_content, APN_BLOCK_RE)
         if name not in skipped_context_names
     ]
     ip_pool_context_names = [
         name
-        for name in find_context_names_with_pattern(filtered_source_content, IP_POOL_LINE_RE)
+        for name in find_context_names_with_pattern(filtered_ref_content, IP_POOL_LINE_RE)
         if name not in skipped_context_names
     ]
 
     modified_content, service_context_counts = sync_context_objects(
-        source_content,
+        ref_content,
         modified_content,
         service_context_names,
         [
@@ -389,7 +393,7 @@ def modify_config(ref_config_path, base_config_path):
         ],
     )
     modified_content, ip_pool_context_counts = sync_context_objects(
-        source_content,
+        ref_content,
         modified_content,
         ip_pool_context_names,
         [
@@ -404,7 +408,7 @@ def modify_config(ref_config_path, base_config_path):
     }
 
     modified_content, replaced_line_counts = copy_matched_line_values(
-        source_content,
+        ref_content,
         modified_content,
         [
             ("system hostname", SYSTEM_HOSTNAME_RE),
@@ -413,7 +417,7 @@ def modify_config(ref_config_path, base_config_path):
     )
 
     modified_content = restore_contexts_by_name(
-        original_target_content,
+        original_base_content,
         modified_content,
         skipped_context_names,
     )
@@ -562,4 +566,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

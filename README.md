@@ -1,4 +1,4 @@
-# ICSR Config Modifier v1.0.0
+# ICSR Config Modifier v1.0.1
 
 This repository contains `modify_config.py`, a small utility for generating a new configuration file based on two StarOS configuration snapshots.
 
@@ -16,8 +16,8 @@ This tool automates the parts of the service configuration that need to be align
 
 Given:
 
-- `node-1-1.cfg` as the source configuration
-- `node-2-1.cfg` as the target configuration
+- `node-1-1.cfg` as the reference configuration
+- `node-2-1.cfg` as the base configuration
 
 Run:
 
@@ -29,15 +29,15 @@ the script produces:
 
 - `node-2-1-new.cfg`
 
-The generated configuration keeps the target node as the base config and selectively copies service-related values from the source node.
+The generated configuration keeps the base node's config as a starting point and selectively copies service-related values from the reference node.
 
 The script currently:
 
-- copies loopback interface IP addresses from the source config into matching loopback interfaces in the target config
-- updates exact references to the replaced loopback IPs across the target config
-- replaces matching Diameter endpoint blocks in the target config with the source versions when those endpoints use loopback IPs
-- copies `system hostname` from the source config into the generated output
-- copies `radius attribute nas-identifier` values from the source config into the generated output
+- copies loopback interface IP addresses from the reference config into matching loopback interfaces in the base config
+- updates exact references to the replaced loopback IPs across the base config
+- replaces matching Diameter endpoint blocks in the base config with the reference versions when those endpoints use loopback IPs
+- copies `system hostname` from the reference config into the generated output
+- copies `radius attribute nas-identifier` values from the reference config into the generated output
 
 ## Usage
 
