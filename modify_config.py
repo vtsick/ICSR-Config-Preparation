@@ -428,7 +428,7 @@ def modify_config(file3_path, file4_path):
 
 
 def main():
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     logger = logging.getLogger(__name__)
 
     parser = argparse.ArgumentParser(
@@ -460,29 +460,59 @@ def main():
     )
     args = parser.parse_args()
 
-    (
-        modified_content,
-        replacements,
-        replaced_endpoints,
-        replaced_line_counts,
-        synced_context_counts,
-        loopback_discrepancies,
-        discrepancies,
-        skipped_context_names,
-    ) = modify_config(
-        args.source_config,
-        args.target_config,
-    )
+    # Validate input files exist
+    if not args.source_config.is_file():
+        logger.error("Source config file does not exist: %s", args.source_config)
+        return 1
+        
+    if not args.target_config.is_file():
+        logger.error("Target config file does not exist: %s", args.target_config)
+        return 1
+
+    # Validate we can write to output file (or its directory)
+    try:
+        if not args.dry_run:
+            # Try to open for writing to check permissions early
+            with open(args.output_config, "a", encoding="utf-8"):
+                pass
+    except OSError as e:
+        logger.error("Cannot write to output file %s: %s", args.output_config, e)
+        return 1
+
+    try:
+        (
+            modified_content,
+            replacements,
+            replaced_endpoints,
+            replaced_line_counts,
+            synced_context_counts,
+            loopback_discrepancies,
+            discrepancies,
+            skipped_context_names,
+        ) = modify_config(
+            args.source_config,
+            args.target_config,
+        )
+    except Exception as e:
+        logger.error("Error processing configuration: %s", e)
+        return 1
 
     if args.dry_run:
         logger.info("Dry run complete; no file written.")
     else:
-        with open(args.output_config, "w", encoding="utf-8") as outfile:
-            outfile.write(modified_content)
-        logger.info("Modified configuration saved to %s", args.output_config)
+        try:
+            with open(args.output_config, "w", encoding="utf-8") as outfile:
+                outfile.write(modified_content)
+            logger.info("Modified configuration saved to %s", args.output_config)
+        except OSError as e:
+            logger.error("Failed to write output file: %s", e)
+            return 1
 
     logger.info("Updated %d loopback IP mappings.", len(replacements))
-    for old_ip, new_ip in sorted(replacements.items()):
+    # Sort by IP length descending to prevent replacement conflicts
+    # e.g., replace 10.0.0.1 before 10.0.0.10 to avoid partial matches
+    sorted_replacements = sorted(replacements.items(), key=lambda x: (-len(x[0]), x[0]))
+    for old_ip, new_ip in sorted_replacements:
         logger.info("%s -> %s", old_ip, new_ip)
     logger.info("Replaced %d diameter endpoint blocks.", len(replaced_endpoints))
     for endpoint_name in sorted(replaced_endpoints):
@@ -519,6 +549,8 @@ def main():
             logger.warning("  source-only %s: %s", label, name)
         for name in missing_in_source:
             logger.warning("  target-only %s: %s", label, name)
+
+    return 0
 
 
 if __name__ == "__main__":
