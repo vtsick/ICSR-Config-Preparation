@@ -314,10 +314,10 @@ def modify_config(ref_config_path, base_config_path):
     configuration, including interface blocks, BGP network statements, prefix-lists,
     and any other direct IP references.
     """
-    with open(file4_path, "r", encoding="utf-8") as infile:
+    with open(base_config_path, "r", encoding="utf-8") as infile:
         original_target_content = infile.read()
 
-    with open(file3_path, "r", encoding="utf-8") as infile:
+    with open(ref_config_path, "r", encoding="utf-8") as infile:
         source_content = infile.read()
 
     skipped_context_names = (
