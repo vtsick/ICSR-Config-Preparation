@@ -10,6 +10,8 @@ For ICSR, both nodes must have the same service-facing configuration so sessions
 
 This tool automates the parts of the service configuration that need to be aligned between the nodes while leaving the target node's non-shared L3 connectivity in place.
 
+**Note**: This program currently addresses configurations of GGSN/PGW Cisco Virtual Packet Core instances specific to a particular customer while the procedure also should work with MME instances as well as with nodes which contain EPDG services. See CONTRIBUTING.md for details.
+
 ## What It Does
 
 Given:
