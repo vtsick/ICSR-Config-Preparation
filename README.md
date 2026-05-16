@@ -61,5 +61,5 @@ The script creates a new output file and does not modify the input configuration
 
 - Requires Python 3.8+
 - Configuration files are intentionally excluded from git tracking.
-- The script requires three positional arguments: source config, target config, and output config.
+- The script requires three positional arguments: reference config, base config, and output config.
 - Review the resulting config before deployment, especially around node-specific transport and routing sections.
