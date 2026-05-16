@@ -1,4 +1,4 @@
-# ICSR Config Modifier
+# ICSR Config Modifier v1.0.0
 
 This repository contains `modify_config.py`, a small utility for generating a new configuration file based on two StarOS configuration snapshots.
 
