@@ -6,6 +6,9 @@ import re
 from pathlib import Path
 
 
+__version__ = "1.0.0"
+
+
 LOOPBACK_HEADER_RE = re.compile(r"^\s*interface\s+(\S+)\s+loopback\s*$")
 IP_ADDRESS_RE = re.compile(r"^\s*ip address\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)\s*$")
 DIAMETER_ENDPOINT_HEADER_RE = re.compile(r"^(\s*diameter endpoint\s+(\S+)\s*)$")
@@ -436,6 +439,11 @@ def main():
             "Copy matching loopback-related settings from a reference StarOS "
             "configuration into a base configuration."
         )
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
     )
     parser.add_argument(
         "reference_config",
