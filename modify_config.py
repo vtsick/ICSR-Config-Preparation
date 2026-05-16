@@ -306,11 +306,11 @@ def replace_diameter_endpoint_blocks(text, source_blocks, target_blocks, source_
     return text, replaced_endpoints
 
 
-def modify_config(file3_path, file4_path):
+def modify_config(ref_config_path, base_config_path):
     """
-    Copy loopback IP addresses from file3 into the matching loopback interfaces in file4.
+    Copy loopback IP addresses from ref_config into the matching loopback interfaces in base_config.
 
-    All exact references to the old file4 loopback IPs are also updated in the resulting
+    All exact references to the old base_config loopback IPs are also updated in the resulting
     configuration, including interface blocks, BGP network statements, prefix-lists,
     and any other direct IP references.
     """
@@ -433,19 +433,19 @@ def main():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Copy matching loopback-related settings from a source StarOS "
-            "configuration into a target configuration."
+            "Copy matching loopback-related settings from a reference StarOS "
+            "configuration into a base configuration."
         )
     )
     parser.add_argument(
-        "source_config",
+        "reference_config",
         type=Path,
-        help="input config used as the source of loopback-related values",
+        help="reference config used as the source of values to copy",
     )
     parser.add_argument(
-        "target_config",
+        "base_config",
         type=Path,
-        help="config to modify based on the source config",
+        help="base config to modify based on the reference config",
     )
     parser.add_argument(
         "-n",
@@ -461,12 +461,12 @@ def main():
     args = parser.parse_args()
 
     # Validate input files exist
-    if not args.source_config.is_file():
-        logger.error("Source config file does not exist: %s", args.source_config)
+    if not args.reference_config.is_file():
+        logger.error("Reference config file does not exist: %s", args.reference_config)
         return 1
         
-    if not args.target_config.is_file():
-        logger.error("Target config file does not exist: %s", args.target_config)
+    if not args.base_config.is_file():
+        logger.error("Base config file does not exist: %s", args.base_config)
         return 1
 
     # Validate we can write to output file (or its directory)
@@ -490,8 +490,8 @@ def main():
             discrepancies,
             skipped_context_names,
         ) = modify_config(
-            args.source_config,
-            args.target_config,
+            args.reference_config,
+            args.base_config,
         )
     except Exception as e:
         logger.error("Error processing configuration: %s", e)

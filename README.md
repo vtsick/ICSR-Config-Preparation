@@ -42,13 +42,13 @@ The script currently:
 Place these files in the same directory:
 
 - `modify_config.py`
-- your source config
-- your target config
+- your reference config (source of values to copy)
+- your base config (to be modified)
 
 Run:
 
 ```bash
-python3 modify_config.py <source.cfg> <target.cfg> <output.cfg>
+python3 modify_config.py <reference.cfg> <base.cfg> <output.cfg>
 ```
 
 Optional arguments:
