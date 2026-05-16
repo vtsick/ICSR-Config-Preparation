@@ -4,7 +4,7 @@
 
 This repository is intentionally small:
 
-- `modify_config.py`: the only source file; reads two StarOS config snapshots and generates `nn-b2b-sae-4-1-new.cfg`
+- `modify_config.py`: the only source file; reads two StarOS config snapshots and generates a new output config such as `node-2-1-new.cfg`
 - `README.md`: user-facing overview and usage notes
 - `.gitignore`: excludes generated and source config files from version control
 - `*.cfg`: local input/output data files used for execution only; present in the working directory but ignored by git
@@ -33,7 +33,7 @@ There is no formal test suite yet. Validate changes by:
 
 - running `python3 modify_config.py`
 - checking the reported replacement counts
-- inspecting relevant lines in `nn-b2b-sae-4-1-new.cfg` with commands such as `rg -n "system hostname|nas-identifier|diameter endpoint"`
+- inspecting relevant lines in the generated output config with commands such as `rg -n "system hostname|nas-identifier|diameter endpoint" node-2-1-new.cfg`
 
 If tests are added later, place them under `tests/` and prefer `pytest` with filenames like `test_modify_config.py`.
 
